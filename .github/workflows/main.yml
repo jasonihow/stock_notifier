@@ -14,7 +14,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.12'
+        python-version: '3.9'
     
     - name: Install dependencies
       run: |
@@ -28,15 +28,19 @@ jobs:
     
     - name: Install ChromeDriver
       run: |
-        CHROME_VERSION=$(google-chrome --version | awk '{ print $3 }' | awk -F'.' '{ print $1 }')
+        CHROME_VERSION=$(google-chrome --version | awk '{ print $3 }' | cut -d '.' -f 1)  # 获取主版本号
         echo "Chrome major version: $CHROME_VERSION"
+        
         CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
         echo "ChromeDriver version: $CHROMEDRIVER_VERSION"
+        
         if [ -z "$CHROMEDRIVER_VERSION" ]; then
           echo "Failed to get ChromeDriver version, using latest"
           CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
         fi
+        
         echo "Final ChromeDriver version: $CHROMEDRIVER_VERSION"
+        
         curl -L -o chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
         unzip chromedriver.zip
         chmod +x chromedriver
@@ -49,6 +53,13 @@ jobs:
         IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
       run: python crawler.py
     
+    - name: Check if market_data.csv exists
+      run: |
+        if [ ! -f market_data.csv ]; then
+          echo "market_data.csv does not exist. Exiting."
+          exit 1
+        fi
+
     - name: Commit and push if changed
       run: |
         git config --global user.email "github-actions@github.com"
