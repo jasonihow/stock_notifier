@@ -29,10 +29,11 @@ line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 def setup_driver():
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--log-level=3")
     options.add_argument("--lang=zh-TW")
-    service = Service(log_path="NUL")
-    return webdriver.Chrome(options=options, service=service)
+    return webdriver.Chrome(options=options)
 
 
 def get_volume_and_date(driver):
