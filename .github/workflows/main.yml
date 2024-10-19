@@ -41,13 +41,15 @@ jobs:
           exit 1
         fi
     
-        # 解压缩并安装ChromeDriver
+        # 解压缩ChromeDriver
         unzip chromedriver.zip
-        chmod +x chromedriver
-        sudo mv chromedriver /usr/local/bin/
     
-        # 清理下载的zip文件
-        rm chromedriver.zip
+        # 移动到正确的路径并设置权限
+        chmod +x chromedriver-linux64/chromedriver
+        sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+    
+        # 清理下载的zip文件和解压后的目录
+        rm -r chromedriver.zip chromedriver-linux64
     
     - name: Run crawler with Chrome
       env:
