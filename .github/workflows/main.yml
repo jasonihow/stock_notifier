@@ -21,38 +21,29 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Install Microsoft Edge
+    - name: Install ChromeDriver
       run: |
-        # Add Microsoft repository and install Edge
-        wget https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
-        sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main"
-        sudo apt-get update
-        sudo apt-get install -y microsoft-edge-stable
-    
-    - name: Install latest Edge WebDriver
-      run: |
-        # Get the latest stable version of Edge WebDriver
-        LATEST_VERSION=$(curl -s https://msedgedriver.azureedge.net/LATEST_STABLE | tr -d '\r')
-        echo "Using latest stable Edge WebDriver version: $LATEST_VERSION"
+        CHROMEDRIVER_VERSION="114.0.5735.90"
+        echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION"
         
-        # Download and install the latest stable version of Edge WebDriver
-        curl -L -o edgedriver.zip "https://msedgedriver.azureedge.net/${LATEST_VERSION}/edgedriver_linux64.zip"
+        # Download and install specified version of ChromeDriver
+        curl -L -o chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
     
         # Check if the download was successful
         if [ $? -ne 0 ]; then
-          echo "Failed to download Edge WebDriver"
+          echo "Failed to download ChromeDriver"
           exit 1
         fi
     
-        # Unzip and install Edge WebDriver
-        unzip edgedriver.zip
-        chmod +x msedgedriver
-        sudo mv msedgedriver /usr/local/bin/
+        # Unzip and install ChromeDriver
+        unzip chromedriver.zip
+        chmod +x chromedriver
+        sudo mv chromedriver /usr/local/bin/
     
-        # Clean up downloaded zip file
-        rm edgedriver.zip
+        # Clean up the downloaded zip file
+        rm chromedriver.zip
     
-    - name: Run crawler with Edge
+    - name: Run crawler
       env:
         LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
         LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
