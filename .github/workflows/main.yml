@@ -32,7 +32,7 @@ jobs:
     - name: Install latest Edge WebDriver
       run: |
         # Get the latest stable version of Edge WebDriver
-        LATEST_VERSION=$(curl -s https://msedgedriver.azureedge.net/LATEST_STABLE)
+        LATEST_VERSION=$(curl -s https://msedgedriver.azureedge.net/LATEST_STABLE | tr -d '\r')
         echo "Using latest stable Edge WebDriver version: $LATEST_VERSION"
         
         # Download and install the latest stable version of Edge WebDriver
