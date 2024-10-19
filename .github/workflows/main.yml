@@ -25,36 +25,25 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable
-    
+
     - name: Install ChromeDriver
       run: |
-        CHROME_VERSION=$(google-chrome --version | awk '{ print $3 }' | awk -F'.' '{ print $1 }')
-        echo "Chrome major version: $CHROME_VERSION"
+        # 指定稳定的Chrome版本
+        CHROMEDRIVER_VERSION="114.0.5735.90"
+        echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION"
         
-        # Attempt to fetch the specific ChromeDriver version
-        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
-        
-        # Check if the version retrieval was successful
-        if [ -z "$CHROMEDRIVER_VERSION" ]; then
-          echo "Failed to get ChromeDriver version for major version $CHROME_VERSION, using latest"
-          CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
-        fi
-        
-        # Log final driver version
-        echo "Final ChromeDriver version: $CHROMEDRIVER_VERSION"
-        
-        # Download and install ChromeDriver
+        # 下载并安装指定版本的ChromeDriver
         curl -L -o chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
         unzip chromedriver.zip
         chmod +x chromedriver
         sudo mv chromedriver /usr/local/bin/
-    
-    - name: Run crawler
-      env:
-        LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-        IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
-      run: python crawler.py
+        
+        - name: Run crawler
+          env:
+            LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+            LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+            IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+          run: python crawler.py
     
     - name: Commit and push if changed
       run: |
