@@ -25,11 +25,11 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable
-    
+
     - name: Install ChromeDriver
       run: |
-        # 指定稳定的ChromeDriver版本
-        CHROMEDRIVER_VERSION="130.0.6723.58"  # 更新为与Chrome 130兼容的版本
+        # 获取最新稳定版本的ChromeDriver
+        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
         echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION"
         
         # 下载并安装指定版本的ChromeDriver
