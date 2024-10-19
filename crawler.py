@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from io import BytesIO
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.edge.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -27,13 +27,13 @@ line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 
 
 def setup_driver():
-    options = webdriver.ChromeOptions()
+    options = webdriver.EdgeOptions()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--log-level=3")
     options.add_argument("--lang=zh-TW")
-    return webdriver.Chrome(options=options)
+    return webdriver.Edge(options=options)
 
 
 def get_volume_and_date(driver):
