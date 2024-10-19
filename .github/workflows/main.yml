@@ -29,7 +29,7 @@ jobs:
     - name: Install ChromeDriver
       run: |
         # 指定稳定的ChromeDriver版本
-        CHROMEDRIVER_VERSION="114.0.5735.90"
+        CHROMEDRIVER_VERSION="130.0.6723.58"  # 更新为与Chrome 130兼容的版本
         echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION"
         
         # 下载并安装指定版本的ChromeDriver
