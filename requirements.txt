@@ -4,3 +4,4 @@ pandas
 matplotlib
 line-bot-sdk
 requests
+lxml
