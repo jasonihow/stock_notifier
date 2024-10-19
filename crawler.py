@@ -20,8 +20,8 @@ import requests
 sys.stdout.reconfigure(encoding="utf-8")
 
 # Line Messaging API settings
-CHANNEL_ACCESS_TOKEN = "FCY+aAt1kKDmXhcuywqSIa8rTkhY7NkbSNdv7GyiWEHShXMS9GRVb3rHcZA7Pz3mSLnu7xWjUEUvu4XL+S4HElnhINWZ+TVIEbeYfZ3qaMqF3TsNVQmPZqPUnBkmOLup4ESLoHL/KJheTJ9MmOOCFgdB04t89/1O/w1cDnyilFU="
-USER_ID = "U7a58a8a4a6b6a4e7949e84688f7b0848"
+CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
+USER_ID = os.environ.get("LINE_USER_ID")
 
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 
@@ -255,7 +255,7 @@ def create_table_image(file_path):
 def send_line_image(image_buffer):
     try:
         # 將圖片上傳到某個圖片託管服務（這裡使用 imgur 作為示例）
-        imgur_client_id = "6699d30333aa021"
+        imgur_client_id = os.environ.get("IMGUR_CLIENT_ID")
         headers = {"Authorization": f"Client-ID {imgur_client_id}"}
         files = {"image": ("image.png", image_buffer, "image/png")}
         response = requests.post(
