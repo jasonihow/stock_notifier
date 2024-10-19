@@ -28,22 +28,33 @@ jobs:
 
     - name: Install ChromeDriver
       run: |
-        # 指定稳定的Chrome版本
+        # 指定稳定的ChromeDriver版本
         CHROMEDRIVER_VERSION="114.0.5735.90"
         echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION"
         
         # 下载并安装指定版本的ChromeDriver
         curl -L -o chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+    
+        # 检查下载是否成功
+        if [ $? -ne 0 ]; then
+          echo "Failed to download ChromeDriver"
+          exit 1
+        fi
+    
+        # 解压缩并安装ChromeDriver
         unzip chromedriver.zip
         chmod +x chromedriver
         sudo mv chromedriver /usr/local/bin/
-        
-        - name: Run crawler
-          env:
-            LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-            LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-            IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
-          run: python crawler.py
+    
+        # 清理下载的zip文件
+        rm chromedriver.zip
+    
+    - name: Run crawler
+      env:
+        LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+      run: python crawler.py
     
     - name: Commit and push if changed
       run: |
