@@ -21,36 +21,38 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Install Chrome
+    - name: Install Microsoft Edge
       run: |
-        # 手动下载并安装特定版本的Chrome
-        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get install -f
+        # 添加Microsoft Edge的源并安装
+        wget https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
+        sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main"
+        sudo apt-get update
+        sudo apt-get install -y microsoft-edge-stable
     
-    - name: Install ChromeDriver
+    - name: Install Edge WebDriver
       run: |
-        # 指定稳定的ChromeDriver版本
-        CHROMEDRIVER_VERSION="114.0.5735.90"
-        echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION"
+        # 指定与Edge浏览器版本相匹配的WebDriver版本
+        EDGE_DRIVER_VERSION="your_edge_driver_version"  # 请替换为实际的WebDriver版本
+        echo "Using Edge WebDriver version: $EDGE_DRIVER_VERSION"
         
-        # 下载并安装指定版本的ChromeDriver
-        curl -L -o chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+        # 下载并安装指定版本的Edge WebDriver
+        curl -L -o edgedriver.zip "https://msedgedriver.azureedge.net/${EDGE_DRIVER_VERSION}/edgedriver_linux64.zip"
     
         # 检查下载是否成功
         if [ $? -ne 0 ]; then
-          echo "Failed to download ChromeDriver"
+          echo "Failed to download Edge WebDriver"
           exit 1
         fi
     
-        # 解压缩并安装ChromeDriver
-        unzip chromedriver.zip
-        chmod +x chromedriver
-        sudo mv chromedriver /usr/local/bin/
+        # 解压缩并安装Edge WebDriver
+        unzip edgedriver.zip
+        chmod +x msedgedriver
+        sudo mv msedgedriver /usr/local/bin/
     
         # 清理下载的zip文件
-        rm chromedriver.zip
+        rm edgedriver.zip
     
-    - name: Run crawler
+    - name: Run crawler with Edge
       env:
         LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
         LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
