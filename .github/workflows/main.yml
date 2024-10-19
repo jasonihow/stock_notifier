@@ -23,7 +23,7 @@ jobs:
     
     - name: Install Microsoft Edge
       run: |
-        # 添加Microsoft Edge的源并安装
+        # Add Microsoft repository and install Edge
         wget https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
         sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main"
         sudo apt-get update
@@ -31,25 +31,25 @@ jobs:
     
     - name: Install Edge WebDriver
       run: |
-        # 指定与Edge浏览器版本相匹配的WebDriver版本
-        EDGE_DRIVER_VERSION="your_edge_driver_version"  # 请替换为实际的WebDriver版本
+        # Specify the correct version of Edge WebDriver
+        EDGE_DRIVER_VERSION="your_edge_driver_version"  # Replace with actual version number
         echo "Using Edge WebDriver version: $EDGE_DRIVER_VERSION"
         
-        # 下载并安装指定版本的Edge WebDriver
+        # Download and install specified version of Edge WebDriver
         curl -L -o edgedriver.zip "https://msedgedriver.azureedge.net/${EDGE_DRIVER_VERSION}/edgedriver_linux64.zip"
     
-        # 检查下载是否成功
+        # Check if the download was successful
         if [ $? -ne 0 ]; then
           echo "Failed to download Edge WebDriver"
           exit 1
         fi
     
-        # 解压缩并安装Edge WebDriver
+        # Unzip and install Edge WebDriver
         unzip edgedriver.zip
         chmod +x msedgedriver
         sudo mv msedgedriver /usr/local/bin/
     
-        # 清理下载的zip文件
+        # Clean up downloaded zip file
         rm edgedriver.zip
     
     - name: Run crawler with Edge
