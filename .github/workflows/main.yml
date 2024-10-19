@@ -29,14 +29,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y microsoft-edge-stable
     
-    - name: Install Edge WebDriver
+    - name: Install latest Edge WebDriver
       run: |
-        # Specify the correct version of Edge WebDriver
-        EDGE_DRIVER_VERSION="your_edge_driver_version"  # Replace with actual version number
-        echo "Using Edge WebDriver version: $EDGE_DRIVER_VERSION"
+        # Get the latest stable version of Edge WebDriver
+        LATEST_VERSION=$(curl -s https://msedgedriver.azureedge.net/LATEST_STABLE)
+        echo "Using latest stable Edge WebDriver version: $LATEST_VERSION"
         
-        # Download and install specified version of Edge WebDriver
-        curl -L -o edgedriver.zip "https://msedgedriver.azureedge.net/${EDGE_DRIVER_VERSION}/edgedriver_linux64.zip"
+        # Download and install the latest stable version of Edge WebDriver
+        curl -L -o edgedriver.zip "https://msedgedriver.azureedge.net/${LATEST_VERSION}/edgedriver_linux64.zip"
     
         # Check if the download was successful
         if [ $? -ne 0 ]; then
