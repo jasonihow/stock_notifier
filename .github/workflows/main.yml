@@ -23,13 +23,18 @@ jobs:
     
     - name: Install Chrome
       run: |
+        # 添加Google的签名密钥
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        # 添加Google Chrome的源
+        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        # 更新包列表并安装指定版本的Chrome
         sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
-
+        sudo apt-get install -y google-chrome-stable=114.0.5735.90-1
+    
     - name: Install ChromeDriver
       run: |
-        # 获取最新稳定版本的ChromeDriver
-        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
+        # 指定稳定的ChromeDriver版本
+        CHROMEDRIVER_VERSION="114.0.5735.90"
         echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION"
         
         # 下载并安装指定版本的ChromeDriver
