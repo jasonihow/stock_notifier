@@ -21,29 +21,35 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
+    - name: Install Google Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+    
     - name: Install ChromeDriver
       run: |
-        CHROMEDRIVER_VERSION="114.0.5735.90"
-        echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION"
+        # 指定ChromeDriver的下载链接
+        CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/130.0.6723.58/linux64/chromedriver-linux64.zip"
+        echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL"
         
-        # Download and install specified version of ChromeDriver
-        curl -L -o chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+        # 下载并安装ChromeDriver
+        curl -L -o chromedriver.zip "$CHROMEDRIVER_URL"
     
-        # Check if the download was successful
+        # 检查下载是否成功
         if [ $? -ne 0 ]; then
           echo "Failed to download ChromeDriver"
           exit 1
         fi
     
-        # Unzip and install ChromeDriver
+        # 解压缩并安装ChromeDriver
         unzip chromedriver.zip
         chmod +x chromedriver
         sudo mv chromedriver /usr/local/bin/
     
-        # Clean up the downloaded zip file
+        # 清理下载的zip文件
         rm chromedriver.zip
     
-    - name: Run crawler
+    - name: Run crawler with Chrome
       env:
         LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
         LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
