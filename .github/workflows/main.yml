@@ -30,14 +30,20 @@ jobs:
       run: |
         CHROME_VERSION=$(google-chrome --version | awk '{ print $3 }' | awk -F'.' '{ print $1 }')
         echo "Chrome major version: $CHROME_VERSION"
-        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION" || echo "")
         
+        # Attempt to fetch the specific ChromeDriver version
+        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
+        
+        # Check if the version retrieval was successful
         if [ -z "$CHROMEDRIVER_VERSION" ]; then
           echo "Failed to get ChromeDriver version for major version $CHROME_VERSION, using latest"
           CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
         fi
         
+        # Log final driver version
         echo "Final ChromeDriver version: $CHROMEDRIVER_VERSION"
+        
+        # Download and install ChromeDriver
         curl -L -o chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
         unzip chromedriver.zip
         chmod +x chromedriver
