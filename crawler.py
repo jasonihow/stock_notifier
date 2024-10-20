@@ -13,17 +13,15 @@ import os
 from linebot import LineBotApi
 from linebot.models import TextSendMessage, ImageSendMessage
 import requests
-from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_USER_ID, IMGUR_CLIENT_ID
 
 # 設置控制台輸出編碼為UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
 
 # Line Messaging API settings
-# CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
-# USER_ID = os.environ.get("LINE_USER_ID")
+CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
+USER_ID = os.environ.get("LINE_USER_ID")
 
-# 使用從 config.py 導入的變量
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 
 
 def setup_driver():
@@ -256,7 +254,8 @@ def create_table_image(file_path):
 def send_line_image(image_buffer):
     try:
         # 將圖片上傳到某個圖片託管服務（這裡使用 imgur 作為示例）
-        headers = {"Authorization": f"Client-ID {IMGUR_CLIENT_ID}"}
+        imgur_client_id = os.environ.get("IMGUR_CLIENT_ID")
+        headers = {"Authorization": f"Client-ID {imgur_client_id}"}
         files = {"image": ("image.png", image_buffer, "image/png")}
         response = requests.post(
             "https://api.imgur.com/3/image", headers=headers, files=files
@@ -265,7 +264,7 @@ def send_line_image(image_buffer):
 
         # 發送圖片消息
         line_bot_api.push_message(
-            LINE_USER_ID,
+            USER_ID,
             ImageSendMessage(
                 original_content_url=image_url, preview_image_url=image_url
             ),
@@ -327,7 +326,7 @@ def main():
     except Exception as e:
         error_message = f"發生錯誤: {e}"
         print(error_message)
-        line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=error_message))
+        line_bot_api.push_message(USER_ID, TextSendMessage(text=error_message))
     finally:
         driver.quit()
 
