@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from io import BytesIO
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -13,17 +12,18 @@ import re
 import os
 from linebot import LineBotApi
 from linebot.models import TextSendMessage, ImageSendMessage
-from linebot.exceptions import LineBotApiError
 import requests
+from config import LINE_CHANNEL_ACCESS_TOKEN, LINE_USER_ID, IMGUR_CLIENT_ID
 
 # 設置控制台輸出編碼為UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
 
 # Line Messaging API settings
-CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
-USER_ID = os.environ.get("LINE_USER_ID")
+# CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
+# USER_ID = os.environ.get("LINE_USER_ID")
 
-line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
+# 使用從 config.py 導入的變量
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 
 
 def setup_driver():
@@ -256,8 +256,7 @@ def create_table_image(file_path):
 def send_line_image(image_buffer):
     try:
         # 將圖片上傳到某個圖片託管服務（這裡使用 imgur 作為示例）
-        imgur_client_id = os.environ.get("IMGUR_CLIENT_ID")
-        headers = {"Authorization": f"Client-ID {imgur_client_id}"}
+        headers = {"Authorization": f"Client-ID {IMGUR_CLIENT_ID}"}
         files = {"image": ("image.png", image_buffer, "image/png")}
         response = requests.post(
             "https://api.imgur.com/3/image", headers=headers, files=files
@@ -266,7 +265,7 @@ def send_line_image(image_buffer):
 
         # 發送圖片消息
         line_bot_api.push_message(
-            USER_ID,
+            LINE_USER_ID,
             ImageSendMessage(
                 original_content_url=image_url, preview_image_url=image_url
             ),
@@ -328,7 +327,7 @@ def main():
     except Exception as e:
         error_message = f"發生錯誤: {e}"
         print(error_message)
-        line_bot_api.push_message(USER_ID, TextSendMessage(text=error_message))
+        line_bot_api.push_message(LINE_USER_ID, TextSendMessage(text=error_message))
     finally:
         driver.quit()
 
