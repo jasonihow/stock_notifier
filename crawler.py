@@ -127,8 +127,8 @@ def get_future_empty(driver):
             int(rows[i].find_all("td")[11].text.split("\n")[1].replace(",", "")[1:])
             for i in [2, 11]
         ]
-        return nums[0], nums[1]  # 返回兩個值
-    return None, None
+        return round(nums[0] + nums[1] / 4), nums[1]  # 返回兩個值
+    return None
 
 
 def get_top510(driver):
