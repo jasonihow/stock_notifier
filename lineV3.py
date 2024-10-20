@@ -46,29 +46,17 @@ def setup_driver():
 def get_volume_and_date(driver):
     try:
         driver.get("https://www.twse.com.tw/zh/trading/historical/mi-index.html")
-        WebDriverWait(driver, 60).until(  # 增加等待時間到60秒
+        WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "reports"))
-        )
-        # 等待頁面完全加載
-        WebDriverWait(driver, 60).until(
-            lambda d: d.execute_script("return document.readyState") == "complete"
         )
         soup = BeautifulSoup(driver.page_source, "lxml")
 
         # 提取日期
         time_element = soup.find("div", id="table6")
         if time_element is None:
-            print("無法找到日期元素，嘗試其他方法...")
-            # 嘗試其他方法來獲取日期，例如：
-            date_element = driver.find_element(
-                By.XPATH, "//div[contains(@class, 'title')]/h2"
-            )
-            if date_element:
-                date_str = date_element.text
-            else:
-                raise ValueError("無法通過任何方法找到日期元素")
-        else:
-            date_str = time_element.find("hgroup").text.split(" ")[0][1:]
+            print("無法找到日期元素")
+            return None, None
+        date_str = time_element.find("hgroup").text.split(" ")[0][1:]
         year, month, day = (
             date_str.replace("年", "/").replace("月", "/").replace("日", "").split("/")
         )
@@ -91,7 +79,6 @@ def get_volume_and_date(driver):
         return date, volume
     except Exception as e:
         print(f"在 get_volume_and_date 函數中發生錯誤: {e}")
-        print(f"頁面源代碼: {driver.page_source}")  # 添加這行來查看頁面源代碼
         return None, None
 
 
@@ -246,13 +233,7 @@ def create_table_image(file_path):
     df = df.tail(10)
 
     # 設置中文字體
-    plt.rcParams["font.sans-serif"] = [
-        "Noto Sans CJK TC",
-        "Noto Sans CJK JP",
-        "Noto Sans CJK KR",
-        "Noto Sans CJK SC",
-        "sans-serif",
-    ]
+    plt.rcParams["font.sans-serif"] = ["Microsoft YaHei"]
     plt.rcParams["axes.unicode_minus"] = False
 
     # 創建圖表
@@ -320,7 +301,7 @@ def send_line_image(image_buffer):
     except requests.RequestException as e:
         print(f"上傳圖片到 Imgur 時發生網絡錯誤: {str(e)}")
     except ValueError as e:
-        print(f"處 Imgur 響應時發生錯誤: {str(e)}")
+        print(f"處理 Imgur 響應時發生錯誤: {str(e)}")
     except Exception as e:
         print(f"發送 Line 圖片時發生未知錯誤: {str(e)}")
 
