@@ -2,6 +2,6 @@ selenium
 beautifulsoup4
 pandas
 matplotlib
-line-bot-sdk
+line-bot-sdk>=3.0
 requests
 lxml
