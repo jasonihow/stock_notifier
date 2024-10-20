@@ -10,9 +10,15 @@ from bs4 import BeautifulSoup
 import sys
 import re
 import os
-from linebot import LineBotApi
-from linebot.models import TextSendMessage, ImageSendMessage
-import requests
+import requests  # 添加這行
+from linebot.v3.messaging import (
+    Configuration,
+    ApiClient,
+    MessagingApi,
+    TextMessage,
+    ImageMessage,
+    PushMessageRequest,
+)
 
 # 設置控制台輸出編碼為UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
@@ -21,7 +27,10 @@ sys.stdout.reconfigure(encoding="utf-8")
 CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
 USER_ID = os.environ.get("LINE_USER_ID")
 
-line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
+# 更新 LINE Bot API 初始化
+configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
+api_client = ApiClient(configuration)
+line_bot_api = MessagingApi(api_client)
 
 
 def setup_driver():
@@ -35,33 +44,42 @@ def setup_driver():
 
 
 def get_volume_and_date(driver):
-    driver.get("https://www.twse.com.tw/zh/trading/historical/mi-index.html")
-    WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.ID, "reports")))
-    soup = BeautifulSoup(driver.page_source, "lxml")
+    try:
+        driver.get("https://www.twse.com.tw/zh/trading/historical/mi-index.html")
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.ID, "reports"))
+        )
+        soup = BeautifulSoup(driver.page_source, "lxml")
 
-    # 提取日期
-    time_element = soup.find("div", id="table6")
-    date_str = time_element.find("hgroup").text.split(" ")[0][1:]
-    year, month, day = (
-        date_str.replace("年", "/").replace("月", "/").replace("日", "").split("/")
-    )
-    year = int(year) + 1911  # 轉換民國年為西元年
-    date = f"{year:04d}/{int(month):02d}/{int(day):02d}"
+        # 提取日期
+        time_element = soup.find("div", id="table6")
+        if time_element is None:
+            print("無法找到日期元素")
+            return None, None
+        date_str = time_element.find("hgroup").text.split(" ")[0][1:]
+        year, month, day = (
+            date_str.replace("年", "/").replace("月", "/").replace("日", "").split("/")
+        )
+        year = int(year) + 1911  # 轉換民國年為西元年
+        date = f"{year:04d}/{int(month):02d}/{int(day):02d}"
 
-    # 提取成交量
-    tbody = soup.find("tbody", class_="is-last-page")
-    volume = None
-    if tbody:
-        rows = tbody.find_all("tr")
-        for row in rows:
-            columns = row.find_all("td")
-            if columns and columns[0].get_text(strip=True) == "總計(1~15)":
-                total_value = columns[1].get_text(strip=True)
-                total_value = total_value.replace(",", "")
-                volume = round(int(total_value) / 100000000, 1)
-                break
+        # 提取成交量
+        tbody = soup.find("tbody", class_="is-last-page")
+        volume = None
+        if tbody:
+            rows = tbody.find_all("tr")
+            for row in rows:
+                columns = row.find_all("td")
+                if columns and columns[0].get_text(strip=True) == "總計(1~15)":
+                    total_value = columns[1].get_text(strip=True)
+                    total_value = total_value.replace(",", "")
+                    volume = round(int(total_value) / 100000000, 1)
+                    break
 
-    return date, volume
+        return date, volume
+    except Exception as e:
+        print(f"在 get_volume_and_date 函數中發生錯誤: {e}")
+        return None, None
 
 
 def get_three_big_man(driver):
@@ -255,23 +273,37 @@ def send_line_image(image_buffer):
     try:
         # 將圖片上傳到某個圖片託管服務（這裡使用 imgur 作為示例）
         imgur_client_id = os.environ.get("IMGUR_CLIENT_ID")
+        if not imgur_client_id:
+            raise ValueError("IMGUR_CLIENT_ID 環境變量未設置")
+
         headers = {"Authorization": f"Client-ID {imgur_client_id}"}
         files = {"image": ("image.png", image_buffer, "image/png")}
         response = requests.post(
             "https://api.imgur.com/3/image", headers=headers, files=files
         )
-        image_url = response.json()["data"]["link"]
+        response.raise_for_status()  # 如果請求失敗，這將引發異常
+
+        response_data = response.json()
+        print(f"Imgur API 響應: {response_data}")  # 添加這行來查看完整的響應
+
+        if "data" not in response_data or "link" not in response_data["data"]:
+            raise ValueError(f"Imgur API 響應中缺少預期的數據: {response_data}")
+
+        image_url = response_data["data"]["link"]
 
         # 發送圖片消息
-        line_bot_api.push_message(
-            USER_ID,
-            ImageSendMessage(
-                original_content_url=image_url, preview_image_url=image_url
-            ),
+        message = ImageMessage(
+            original_content_url=image_url, preview_image_url=image_url
         )
+        request = PushMessageRequest(to=USER_ID, messages=[message])
+        line_bot_api.push_message(request)
         print("圖片已成功發送到 Line")
+    except requests.RequestException as e:
+        print(f"上傳圖片到 Imgur 時發生網絡錯誤: {str(e)}")
+    except ValueError as e:
+        print(f"處理 Imgur 響應時發生錯誤: {str(e)}")
     except Exception as e:
-        print(f"發送 Line 圖片時發生錯誤: {e}")
+        print(f"發送 Line 圖片時發生未知錯誤: {str(e)}")
 
 
 def format_data_message(data):
@@ -324,9 +356,11 @@ def main():
         send_line_image(image_buffer)
 
     except Exception as e:
-        error_message = f"發生錯誤: {e}"
+        error_message = f"發生錯誤: {str(e)}"
         print(error_message)
-        line_bot_api.push_message(USER_ID, TextSendMessage(text=error_message))
+        message = TextMessage(text=error_message)
+        request = PushMessageRequest(to=USER_ID, messages=[message])
+        line_bot_api.push_message(request)
     finally:
         driver.quit()
 
