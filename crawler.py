@@ -127,8 +127,8 @@ def get_future_empty(driver):
             int(rows[i].find_all("td")[11].text.split("\n")[1].replace(",", "")[1:])
             for i in [2, 11]
         ]
-        return round(nums[0] + nums[1] / 4), nums[1]
-    return None
+        return nums[0], nums[1]  # 返回兩個值
+    return None, None
 
 
 def get_top510(driver):
@@ -215,7 +215,7 @@ def check_and_write_data(date, data):
                     "前十大交易人留倉",
                     "外資選擇權",
                     "選擇權PCR",
-                    "小台全體未平倉量",
+                    "韭菜指數",
                 ]
             )
             writer.writerow(data)
@@ -337,7 +337,7 @@ def format_data_message(data):
 前十大交易人留倉: {data[7]}
 外資選擇權: {data[8]}
 選擇權PCR: {data[9]}
-小台全體未平倉量: {data[10]}
+韭菜指數: {data[10]}
 """
 
 
@@ -346,24 +346,29 @@ def main():
     try:
         date, volume = get_volume_and_date(driver)
         foreign_investors, investment_trust, self_dealer = get_three_big_man(driver)
-        future_empty = get_future_empty(driver)
+        future_empty, small_future_empty = get_future_empty(driver)  # 獲取兩個值
         top5, top10 = get_top510(driver)
         choice = get_choice(driver)
         pcr = get_pcr(driver)
         little_tai = get_little_tai(driver)
 
+        # 計算韭菜指數
+        chive_index = (
+            round(-small_future_empty / little_tai * 100, 1) if little_tai else None
+        )
+
         data = [
             date,
-            volume,
+            str(volume) + "億",
             foreign_investors,
             investment_trust,
             self_dealer,
-            future_empty,
+            future_empty,  # 外資期貨未平倉
             top5,
             top10,
             choice,
             pcr,
-            little_tai,
+            str(chive_index) + "%",  # 韭菜指數
         ]
 
         check_and_write_data(date, data)
