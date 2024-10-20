@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.PAT }}  # 使用PAT進行checkout
     
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -64,3 +66,5 @@ jobs:
         git config --global user.name "GitHub Actions"
         git add market_data.csv
         git diff --quiet && git diff --staged --quiet || (git commit -m "Update market data" && git push)
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}  # 使用PAT進行推送
