@@ -127,7 +127,7 @@ def get_three_big_man(target_date):
                 f"{round(int(json_data['data'][3][3].replace(',', '')) / 100000000, 1)}"
             )
 
-            return self_dealer_sum, investment_trust, foreign_investors
+            return foreign_investors, investment_trust, self_dealer_sum
             # 顯示解析後的資料
 
         except Exception as e:
@@ -288,7 +288,7 @@ def get_choice(driver, target_date):
     input_element.clear()
     input_element.send_keys(target_date)
 
-    # 增加等待時間以確保選擇生效
+    # 增加待時間以確保選擇生效
     time.sleep(5)
 
     # 找到並點擊 "送出查詢" 按鈕
@@ -450,10 +450,9 @@ def check_and_write_data(date, data):
                     "自營商",
                     "外資期貨未平倉",
                     "前五大交易人留倉",
-                    "前十大交易人留倉",
+                    "十大交易人留倉",
                     "外資選擇權",
                     "選擇權PCR",
-                    "韭菜指數",
                     "韭菜指數",
                 ]
             )
@@ -507,12 +506,13 @@ def create_table_image(file_path):
     table.set_fontsize(8)
     table.scale(1.2, 1.5)
 
-    # 為負數設置紅色
+    # 為負數和小於100的選擇權PCR設置紅色
     for (row, col), cell in table.get_celld().items():
         if row != 0:  # 跳過標題行
             try:
                 value = float(cell.get_text().get_text())
-                if value < 0:
+                # 檢查選擇權PCR列（假設選擇權PCR在第9列）
+                if value < 0 or (col == 8 and value < 100):  # 確保列索引正確
                     cell.set_text_props(color="red")
             except ValueError:
                 pass  # 如果無法轉換為浮點數，就跳過
@@ -597,24 +597,24 @@ def main(target_date=None):
 
         # 計算韭菜指數
         chive_index = (
-            round(-int(small_future_empty) / int(little_tai) * 100, 1)
+            round(-int(small_future_empty) / int(little_tai) * 100, 2)
             if little_tai
             else None
         )
 
+        # 格式化數據
         data = [
             target_date,
-            str(volume) + "億",
+            f"{volume}億",
             foreign_investors,
             investment_trust,
             self_dealer,
             future_empty,  # 外資期貨未平倉
-            future_empty,  # 外資期貨未平倉
             top5,
             top10,
-            pcr,
-            choice,
-            str(chive_index) + "%",  # 韭菜指數
+            f"{round(pcr, 1)}",  # 選擇權PCR進位到小數點後一位
+            f"{round(float(choice), 0)}",  # 外資選擇權進位到個位數
+            f"{chive_index}%",  # 韭菜指數
         ]
 
         check_and_write_data(target_date, data)
