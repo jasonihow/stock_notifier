@@ -11,6 +11,9 @@ import sys
 import re
 import os
 import requests  # 添加這行
+import json
+import time
+
 from linebot.v3.messaging import (
     Configuration,
     ApiClient,
@@ -19,6 +22,9 @@ from linebot.v3.messaging import (
     ImageMessage,
     PushMessageRequest,
 )
+import argparse
+from datetime import datetime, timedelta
+
 
 # 設置控制台輸出編碼為UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
@@ -43,156 +49,388 @@ def setup_driver():
     return webdriver.Chrome(options=options)
 
 
-def get_volume_and_date(driver):
-    try:
-        driver.get("https://www.twse.com.tw/zh/trading/historical/mi-index.html")
-        WebDriverWait(driver, 60).until(  # 增加等待時間到60秒
-            EC.presence_of_element_located((By.ID, "reports"))
-        )
-        # 等待頁面完全加載
-        WebDriverWait(driver, 60).until(
-            lambda d: d.execute_script("return document.readyState") == "complete"
-        )
-        soup = BeautifulSoup(driver.page_source, "lxml")
+def get_volume(target_date):
+    target_date = target_date.replace("/", "")
+    url = f"https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={target_date}&type=MS&response=json&_=1729853427943"
 
-        # 提取日期
-        time_element = soup.find("div", id="table6")
-        if time_element is None:
-            print("無法找到日期元素，嘗試其他方法...")
-            # 嘗試其他方法來獲取日期，例如：
-            date_element = driver.find_element(
-                By.XPATH, "//div[contains(@class, 'title')]/h2"
+    # 設定請求標頭
+    headers = {
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+        "Connection": "keep-alive",
+        "Referer": "https://www.twse.com.tw/zh/trading/historical/mi-index.html",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+
+    # 發送 GET 請求
+    response = requests.get(url, headers=headers)
+
+    # 檢查請求是否成功
+    if response.status_code == 200:
+        # 解析資料
+        # 嘗試用不同的編碼進行解碼
+        try:
+            # 假設資料是以 big5 編碼
+            data = response.content.decode("UTF-8")
+            # 由於原始資料是以某種結構化方式返回，嘗試將其轉換為字典
+
+            json_data = json.loads(data)
+
+            # 顯示解析後的資料
+
+            volume = json_data["tables"][6]["data"][16][1].replace(",", "")
+            volume = round(int(volume) / 100000000, 1)  # 根據需求解析並處理資料
+            return volume
+        except Exception as e:
+            print(f"資料解析失敗: {e}")
+    else:
+        print(f"請求失敗，狀態碼: {response.status_code}")
+
+
+def get_three_big_man(target_date):
+    target_date = target_date.replace("/", "")
+    url = f"https://www.twse.com.tw/rwd/zh/fund/BFI82U?type=day&dayDate={target_date}&response=json&_=1729856960636"
+
+    # 設定請求標頭
+    headers = {
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+        "Connection": "keep-alive",
+        "Referer": "https://www.twse.com.tw/zh/trading/historical/mi-index.html",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+        "X-Requested-With": "XMLHttpRequest",
+    }
+
+    # 發送 GET 請求
+    response = requests.get(url, headers=headers)
+
+    # 檢查請求是否成功
+    if response.status_code == 200:
+        # 解析資料
+        # 嘗試用不同的編碼進行解碼
+        try:
+            # 假設資料是以 big5 編碼
+            data = response.content.decode("UTF-8")
+            # 由於原始資料是以某種結構化方式返回，嘗試將其轉換為字典
+
+            json_data = json.loads(data)
+            a = json_data["data"][0][3].replace(",", "")
+            b = json_data["data"][1][3].replace(",", "")
+            self_dealer_sum = f"{round((int(a) + int(b)) / 100000000, 1)}"
+            investment_trust = (
+                f"{round(int(json_data['data'][2][3].replace(',', '')) / 100000000, 1)}"
             )
-            if date_element:
-                date_str = date_element.text
-            else:
-                raise ValueError("無法通過任何方法找到日期元素")
-        else:
-            date_str = time_element.find("hgroup").text.split(" ")[0][1:]
-        year, month, day = (
-            date_str.replace("年", "/").replace("月", "/").replace("日", "").split("/")
-        )
-        year = int(year) + 1911  # 轉換民國年為西元年
-        date = f"{year:04d}/{int(month):02d}/{int(day):02d}"
+            foreign_investors = (
+                f"{round(int(json_data['data'][3][3].replace(',', '')) / 100000000, 1)}"
+            )
 
-        # 提取成交量
-        tbody = soup.find("tbody", class_="is-last-page")
-        volume = None
-        if tbody:
-            rows = tbody.find_all("tr")
-            for row in rows:
-                columns = row.find_all("td")
-                if columns and columns[0].get_text(strip=True) == "總計(1~15)":
-                    total_value = columns[1].get_text(strip=True)
-                    total_value = total_value.replace(",", "")
-                    volume = round(int(total_value) / 100000000, 1)
-                    break
+            return self_dealer_sum, investment_trust, foreign_investors
+            # 顯示解析後的資料
 
-        return date, volume
-    except Exception as e:
-        print(f"在 get_volume_and_date 函數中發生錯誤: {e}")
-        print(f"頁面源代碼: {driver.page_source}")  # 添加這行來查看頁面源代碼
-        return None, None
+        except Exception as e:
+            print(f"資料解析失敗: {e}")
+    else:
+        print(f"請求失敗，狀態碼: {response.status_code}")
 
 
-def get_three_big_man(driver):
-    driver.get("https://www.twse.com.tw/zh/trading/foreign/bfi82u.html")
-    WebDriverWait(driver, 30).until(
-        EC.visibility_of_element_located((By.ID, "reports"))
-    )
-    soup = BeautifulSoup(driver.page_source, "lxml")
-    tbody = soup.find("tbody", class_="is-last-page")
-    if tbody:
-        rows = tbody.find_all("tr")
-        values = [
-            int(rows[i].find_all("td")[3].text.replace(",", "")) for i in [0, 1, 2, 3]
-        ]
-        foreign_investors = round(values[3] / 100000000, 2)
-        investment_trust = round(values[2] / 100000000, 2)
-        self_dealer_sum = round((values[0] + values[1]) / 100000000, 2)
-        return foreign_investors, investment_trust, self_dealer_sum
-    return None, None, None
-
-
-def get_future_empty(driver):
+def get_future_empty_and_little_furture_empty(driver, target_date):
     driver.get("https://www.taifex.com.tw/cht/3/futContractsDate")
-    WebDriverWait(driver, 30).until(
+    # 使用顯式等待到側邊欄加載完成
+    WebDriverWait(driver, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_right"))
+    )
+
+    # 等待日期輸入框可用
+    input_element = WebDriverWait(driver, 60).until(
+        EC.visibility_of_element_located((By.ID, "queryDate"))
+    )
+    input_element.clear()
+    input_element.send_keys(target_date)
+
+    # 增加等待時間以確保選擇生效
+    time.sleep(3)
+
+    # 找到並點擊 "送出查詢" 按鈕
+    submit_button = WebDriverWait(driver, 60).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "input.btn_orange#button"))
+    )
+
+    # 使用 JavaScript 點擊按鈕
+    driver.execute_script("arguments[0].scrollIntoView(true);", submit_button)
+    driver.execute_script("arguments[0].click();", submit_button)
+
+    div = WebDriverWait(driver, 30).until(
         EC.visibility_of_element_located((By.ID, "printhere"))
     )
-    soup = BeautifulSoup(driver.page_source, "lxml")
+
+    html = div.get_attribute("outerHTML")
+    soup = BeautifulSoup(html, "lxml")
+
     tbody = soup.find("tbody")
+
+    nums = []
     if tbody:
+        # 提取每一行的數據
         rows = tbody.find_all("tr")
-        nums = [
-            int(rows[i].find_all("td")[11].text.split("\n")[1].replace(",", "")[1:])
-            for i in [2, 11]
-        ]
-        return nums[0], nums[1]  # 返回兩個值
-    return None, None
+        for row in range(len(rows)):
+            if row == 2 or row == 10 or row == 11:
+                columns = rows[row].find_all("td")
+                if len(columns) > 12:  # 確保有足夠的欄位
+                    num = columns[11].text.split("\n")
+                    want = num[1].replace(",", "")
+                    nums.append(want[1:])
+                else:
+                    print(f"Row {row} does not have enough columns.")
+            if row == 9:
+                columns = rows[row].find_all("td")
+                if len(columns) > 12:  # 確保有足夠的欄位
+                    num = columns[13].text.split("\n")
+                    want = num[1].replace(",", "")
+                    nums.append(want[1:])
+                else:
+                    print(f"Row {row} does not have enough columns.")
+
+        empty = round(int(nums[0]) + int(nums[3]) / 4)
+        little_future_empty = f"{int(nums[1]) + int(nums[2]) + int(nums[3])}"
+
+        return empty, little_future_empty
+    else:
+        print("找不到 tbody")
 
 
-def get_top510(driver):
-    driver.get("https://www.taifex.com.tw/cht/3/largeTraderFutQryTbl")
-    WebDriverWait(driver, 30).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_middle"))
+def get_top510(driver, target_date):
+    driver.get("https://www.taifex.com.tw/cht/3/largeTraderFutQry")
+
+    # 使用顯式等待，直到側邊欄加載完成
+    WebDriverWait(driver, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_right"))
     )
+
+    # 等待日期輸入框可用
+    input_element = WebDriverWait(driver, 60).until(
+        EC.visibility_of_element_located((By.ID, "queryDate"))
+    )
+    input_element.clear()
+    input_element.send_keys(target_date)
+
+    # 等待下拉選單元素可見
+    select_element = WebDriverWait(driver, 60).until(
+        EC.visibility_of_element_located((By.ID, "contractId"))
+    )
+
+    # 使用 JavaScript 來選擇選項
+    driver.execute_script(
+        """
+        var select = arguments[0];
+        for(var i = 0; i < select.options.length; i++) {
+            if(select.options[i].text.includes('TX')) {
+                select.selectedIndex = i;
+                var event = new Event('change');
+                select.dispatchEvent(event);
+                break;
+            }
+        }
+    """,
+        select_element,
+    )
+
+    # 增加等待時間以確保選擇生效
+    time.sleep(5)
+
+    # 找到並點擊 "送出查詢" 按鈕
+    submit_button = WebDriverWait(driver, 60).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "input.btn_orange#submitButton"))
+    )
+
+    # 使用 JavaScript 點擊按鈕
+    driver.execute_script("arguments[0].scrollIntoView(true);", submit_button)
+    driver.execute_script("arguments[0].click();", submit_button)
+
+    # 等待頁面加載新數據
+    WebDriverWait(driver, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "tbody"))
+    )
+
+    # 使用 BeautifulSoup 解析頁面
     soup = BeautifulSoup(driver.page_source, "lxml")
-    tbody = soup.select("tbody")[1]
-    row = tbody.select("tr")[2]
+
+    # 提取數據
+    tbody = soup.select("tbody")[0]  # 選擇第二個 tbody
+    row = tbody.select("tr")[2]  # 選擇第三行
     columns = row.select("td")
 
     def extract_number(text):
+        # 使用正則表達式提取數字，包括負數
         match = re.search(r"-?\d+", text.replace(",", ""))
         return int(match.group()) if match else 0
 
     nums = [extract_number(columns[i].text) for i in [1, 3, 5, 7]]
-    top5 = nums[0] - nums[2]
-    top10 = nums[1] - nums[3]
+
+    top5 = f"{nums[0] - nums[2]}"
+    top10 = f"{nums[1] - nums[3]}"
+
     return top5, top10
 
 
-def get_choice(driver):
+def get_choice(driver, target_date):
     driver.get("https://www.taifex.com.tw/cht/3/callsAndPutsDate")
-    WebDriverWait(driver, 30).until(
-        EC.visibility_of_element_located((By.ID, "printhere"))
+    WebDriverWait(driver, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_right"))
     )
+
+    # 等待日期輸入框可用
+    input_element = WebDriverWait(driver, 60).until(
+        EC.visibility_of_element_located((By.ID, "queryDate"))
+    )
+    input_element.clear()
+    input_element.send_keys(target_date)
+
+    # 增加等待時間以確保選擇生效
+    time.sleep(5)
+
+    # 找到並點擊 "送出查詢" 按鈕
+    submit_button = WebDriverWait(driver, 60).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "input.btn_orange#button"))
+    )
+
+    # 使用 JavaScript 點擊按鈕
+    driver.execute_script("arguments[0].scrollIntoView(true);", submit_button)
+    driver.execute_script("arguments[0].click();", submit_button)
+
+    # 等待頁面加載新數據
+    WebDriverWait(driver, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "tbody"))
+    )
+
     soup = BeautifulSoup(driver.page_source, "lxml")
+
     tbody = soup.find("tbody")
     if tbody:
         rows = tbody.find_all("tr")
         nums = [
-            int(row.find_all("td")[11].text.replace(",", "").strip())
+            int(row.find_all("td")[12].text.replace(",", "").strip())
             for row in [rows[2], rows[5]]
+            if len(row.find_all("td")) > 11
         ]
-        return nums[0] - nums[1]
-    return None
+
+        if len(nums) == 2:
+            result = f"{round((nums[0] - nums[1]) / 10, 1)}"
+            return result
+        else:
+            print("無法計算結果：數據不完整")
+    else:
+        print("找不到 tbody")
 
 
-def get_pcr(driver):
+def get_pcr(driver, target_date):
     driver.get("https://www.taifex.com.tw/cht/3/pcRatio")
-    WebDriverWait(driver, 30).until(
-        EC.visibility_of_element_located((By.ID, "printhere"))
+    WebDriverWait(driver, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_right"))
     )
+
+    # 等待日期輸入框可用
+    input_element = WebDriverWait(driver, 60).until(
+        EC.visibility_of_element_located((By.ID, "queryStartDate"))
+    )
+    input_element.clear()
+    input_element.send_keys(target_date)
+
+    input_element = WebDriverWait(driver, 60).until(
+        EC.visibility_of_element_located((By.ID, "queryEndDate"))
+    )
+    input_element.clear()
+    input_element.send_keys(target_date)
+
+    # 增加等待時間以確保選擇生效
+    time.sleep(3)
+
+    # 找到並點擊 "送出查詢" 按鈕
+    submit_button = WebDriverWait(driver, 60).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "input.btn_gray#button4"))
+    )
+
+    # 使用 JavaScript 點擊按鈕
+    driver.execute_script("arguments[0].scrollIntoView(true);", submit_button)
+    driver.execute_script("arguments[0].click();", submit_button)
+
+    time.sleep(3)
     soup = BeautifulSoup(driver.page_source, "lxml")
     tbody = soup.find("tbody")
     if tbody:
         row = tbody.find("tr")
         columns = row.find_all("td")
-        if len(columns) >= 2:
-            return float(columns[-1].text.strip())
-    return None
+        return float(columns[-1].text.strip())
 
 
-def get_little_tai(driver):
-    driver.get("https://www.taifex.com.tw/cht/3/futDailyMarketExcel?commodity_id=MTX")
-    WebDriverWait(driver, 30).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_middle"))
+def get_little_tai(driver, target_date):
+    driver.get("https://www.taifex.com.tw/cht/3/futDailyMarketReport")
+    WebDriverWait(driver, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_right"))
     )
+
+    # 等待日期輸入框可用
+    input_element = WebDriverWait(driver, 60).until(
+        EC.visibility_of_element_located((By.ID, "queryDate"))
+    )
+    input_element.clear()
+    input_element.send_keys(target_date)
+
+    # 等待選擇時段的下拉選單可見
+    market_code_select = WebDriverWait(driver, 10).until(
+        EC.visibility_of_element_located((By.ID, "MarketCode"))
+    )
+
+    # 點擊選擇時段的下拉選單
+    market_code_select.click()
+
+    # 等待並選擇一般交易時段（value="0"）
+    option_market_code = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable(
+            (By.XPATH, "//select[@id='MarketCode']/option[@value='0']")
+        )
+    )
+    option_market_code.click()  # 點擊選擇一般交易時段
+
+    # 等待選擇契約的下拉選單可見
+    commodity_idt_select = WebDriverWait(driver, 10).until(
+        EC.visibility_of_element_located((By.ID, "commodity_idt"))
+    )
+
+    # 點擊選擇契約的下拉選單
+    commodity_idt_select.click()
+
+    # 等待並選擇契約 MTX
+    option_commodity_idt = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable(
+            (By.XPATH, "//select[@id='commodity_idt']/option[@value='MTX']")
+        )
+    )
+    option_commodity_idt.click()  # 點擊選擇 MTX
+
+    # 等待「送出查詢」按鈕可見
+    submit_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.ID, "button"))
+    )
+
+    # 點擊「送出查詢」按鈕
+    submit_button.click()
+
+    time.sleep(5)
+
     soup = BeautifulSoup(driver.page_source, "lxml")
+
+    # 提取數據
     target_td = soup.find(
         "td", {"align": "right", "bgcolor": "#ecf2f9", "class": "12bk"}
     )
-    return int(target_td.text.strip()) if target_td else None
+    if target_td:
+        value = target_td.text.strip()
+        return value
+    else:
+        print("無法找到小台全體未平倉")
 
 
 def check_and_write_data(date, data):
@@ -247,11 +485,10 @@ def create_table_image(file_path):
 
     # 設置中文字體
     plt.rcParams["font.sans-serif"] = [
-        "Noto Sans CJK TC",
-        "Noto Sans CJK JP",
-        "Noto Sans CJK KR",
-        "Noto Sans CJK SC",
-        "sans-serif",
+        "Noto Sans CJK TC",  # 優先使用 Noto Sans CJK
+        "WenQuanYi Micro Hei",  # 或者使用 WenQuanYi Micro Hei
+        "Microsoft YaHei",  # 或者使用 Microsoft YaHei
+        "SimHei",  # 或者使用 SimHei
     ]
     plt.rcParams["axes.unicode_minus"] = False
 
@@ -335,30 +572,37 @@ def format_data_message(data):
 外資期貨未平倉: {data[5]}
 前五大交易人留倉: {data[6]}
 前十大交易人留倉: {data[7]}
-外資選擇權: {data[8]}
 選擇權PCR: {data[9]}
+外資選擇權: {data[8]}
 韭菜指數: {data[10]}
 """
 
 
-def main():
+def main(target_date=None):
     driver = setup_driver()
     try:
-        date, volume = get_volume_and_date(driver)
-        foreign_investors, investment_trust, self_dealer = get_three_big_man(driver)
-        future_empty, small_future_empty = get_future_empty(driver)  # 獲取兩個值
-        top5, top10 = get_top510(driver)
-        choice = get_choice(driver)
-        pcr = get_pcr(driver)
-        little_tai = get_little_tai(driver)
+        volume = get_volume(target_date)
+
+        foreign_investors, investment_trust, self_dealer = get_three_big_man(
+            target_date
+        )
+        future_empty, small_future_empty = get_future_empty_and_little_furture_empty(
+            driver, target_date
+        )  # 獲取兩個值
+        top5, top10 = get_top510(driver, target_date)
+        choice = get_choice(driver, target_date)
+        pcr = get_pcr(driver, target_date)
+        little_tai = get_little_tai(driver, target_date)
 
         # 計算韭菜指數
         chive_index = (
-            round(-small_future_empty / little_tai * 100, 1) if little_tai else None
+            round(-int(small_future_empty) / int(little_tai) * 100, 1)
+            if little_tai
+            else None
         )
 
         data = [
-            date,
+            target_date,
             str(volume) + "億",
             foreign_investors,
             investment_trust,
@@ -366,12 +610,12 @@ def main():
             future_empty,  # 外資期貨未平倉
             top5,
             top10,
-            choice,
             pcr,
+            choice,
             str(chive_index) + "%",  # 韭菜指數
         ]
 
-        check_and_write_data(date, data)
+        check_and_write_data(target_date, data)
 
         # 創建表格圖片
         image_buffer = create_table_image("market_data.csv")
@@ -390,4 +634,28 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="抓取特定日期的市場數據")
+
+    # 獲取當前日期作為默認值
+    default_date = datetime.now().strftime("%Y/%m/%d")
+
+    parser.add_argument(
+        "--date", type=str, help="指定日期 (格式: YYYY/MM/DD)", default=default_date
+    )
+    args = parser.parse_args()
+
+    try:
+        target_date = datetime.strptime(args.date, "%Y/%m/%d")
+        # 檢查是否為工作日（週一到週五）
+        if target_date.weekday() >= 5:
+            # 如果是週末，將日期調整為上一個工作日
+            days_to_subtract = 1 if target_date.weekday() == 5 else 2
+            target_date -= timedelta(days=days_to_subtract)
+            print(
+                f"指定日期為週末，已自動調整為上一個工作日: {target_date.strftime('%Y/%m/%d')}"
+            )
+
+        main(target_date.strftime("%Y/%m/%d"))
+    except ValueError:
+        print("日期格式錯誤，請使用 YYYY/MM/DD 格式")
+        exit(1)

@@ -1,62 +1,38 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from bs4 import BeautifulSoup
-from datetime import datetime
-import sys
+import requests
+import json
 
-# 設置控制台輸出編碼為UTF-8
-sys.stdout.reconfigure(encoding="utf-8")
+# API URL
+url = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20241025&type=MS&response=json&_=1729853427943"
 
-# 設定 Selenium 的 Chrome 驅動
-options = webdriver.ChromeOptions()
-options.add_argument("--headless")  # 如果不需要顯示瀏覽器，可以啟用 headless 模式
-options.add_argument("--lang=zh-TW")  # 設置瀏覽器語言為繁體中文
-driver = webdriver.Chrome(options=options)
+# 設定請求標頭
+headers = {
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+    "Connection": "keep-alive",
+    "Referer": "https://www.twse.com.tw/zh/trading/historical/mi-index.html",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+    "X-Requested-With": "XMLHttpRequest",
+}
 
-# 開啟網頁
-driver.get("https://www.twse.com.tw/zh/trading/historical/mi-index.html")
+# 發送 GET 請求
+response = requests.get(url, headers=headers)
 
-try:
-    # 使用顯式等待，直到目標 div 加載完成
-    div = WebDriverWait(driver, 30).until(
-        EC.presence_of_element_located((By.ID, "reports"))
-    )
+# 檢查請求是否成功
+if response.status_code == 200:
+    # 解析資料
+    # 嘗試用不同的編碼進行解碼
+    try:
+        # 假設資料是以 big5 編碼
+        data = response.content.decode("UTF-8")
+        # 由於原始資料是以某種結構化方式返回，嘗試將其轉換為字典
 
-    html = div.get_attribute("outerHTML")
+        json_data = json.loads(data)
 
-    soup = BeautifulSoup(html, "lxml")
-
-    # 提取日期並轉換格式
-    time_element = soup.find("div", id="table6")
-    date_str = time_element.find("hgroup").text.split(" ")[0][1:]
-    year, month, day = (
-        date_str.replace("年", "/").replace("月", "/").replace("日", "").split("/")
-    )
-    year = int(year) + 1911  # 轉換民國年為西元年
-    date = f"{year:04d}/{int(month):02d}/{int(day):02d}"
-    print(f"日期: {date}")
-
-    # 提取總成交金額
-    tbody = soup.find("tbody", class_="is-last-page")
-    if tbody:
-        rows = tbody.find_all("tr")
-        for row in rows:
-            columns = row.find_all("td")
-            if columns and columns[0].get_text(strip=True) == "總計(1~15)":
-                total_value = columns[1].get_text(strip=True)
-                total_value = total_value.replace(",", "")
-                total_billion = round(int(total_value) / 100000000, 1)
-                print(f"成交量: {total_billion} 億")
-                break
-    else:
-        print("找不到 tbody")
-
-except Exception as e:
-    print(f"發生錯誤: {e}")
-
-finally:
-    # 關閉瀏覽器
-    driver.quit()
+        volume = json_data["tables"][6]["data"][16][1].replace(",", "")
+        volume = int(volume) / 100000000  # 根據需求解析並處理資料
+        print(volume)
+    except Exception as e:
+        print(f"資料解析失敗: {e}")
+else:
+    print(f"請求失敗，狀態碼: {response.status_code}")

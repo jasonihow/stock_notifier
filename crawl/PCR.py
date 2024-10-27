@@ -3,17 +3,24 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import (
+    UnexpectedAlertPresentException,
+    NoAlertPresentException,
+)
 from bs4 import BeautifulSoup
 import sys
+import re
+import traceback
+import time
 
 # 設置控制台輸出編碼為UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
 
 # 設定 Selenium 的 Chrome 驅動
 options = webdriver.ChromeOptions()
-options.add_argument("--headless")  # 如果不需要顯示瀏覽器，可以啟用 headless 模式
+# options.add_argument("--headless")  # 如果不需要顯示瀏覽器，可以啟用 headless 模式
 options.add_argument("--log-level=3")  # 設置日誌級別以抑制冗長輸出
-options.add_argument("--lang=zh-TW")
+options.add_argument("--lang=zh-TW")  # 設置語言為繁體中文
 
 # 禁用 Selenium 的日志輸出
 service = Service(log_path="NUL")  # Windows 使用 'NUL'
@@ -21,33 +28,66 @@ service = Service(log_path="NUL")  # Windows 使用 'NUL'
 # 啟動驅動
 driver = webdriver.Chrome(options=options, service=service)
 
+
 # 開啟網頁
-driver.get("https://www.taifex.com.tw/cht/3/pcRatio")
+driver.get("https://www.taifex.com.tw/cht/3/futDailyMarketReport")
 
 try:
-    # 使用顯式等待，直到目標 div 加載完成
-    div = WebDriverWait(driver, 30).until(
-        EC.visibility_of_element_located((By.ID, "printhere"))
+    # 使用顯式等待到側邊欄加載完成
+    WebDriverWait(driver, 60).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_right"))
     )
 
-    soup = BeautifulSoup(driver.page_source, "lxml")
+    # 等待日期輸入框可用
+    input_element = WebDriverWait(driver, 60).until(
+        EC.visibility_of_element_located((By.ID, "queryStartDate"))
+    )
+    input_element.clear()
+    input_element.send_keys("2024/10/24")
 
+    input_element = WebDriverWait(driver, 60).until(
+        EC.visibility_of_element_located((By.ID, "queryEndDate"))
+    )
+    input_element.clear()
+    input_element.send_keys("2024/10/24")
+
+    # 增加等待時間以確保選擇生效
+    time.sleep(3)
+
+    # 找到並點擊 "送出查詢" 按鈕
+    submit_button = WebDriverWait(driver, 60).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "input.btn_gray#button4"))
+    )
+    print("按鈕已找到並可點擊")
+
+    # 使用 JavaScript 點擊按鈕
+    driver.execute_script("arguments[0].scrollIntoView(true);", submit_button)
+    driver.execute_script("arguments[0].click();", submit_button)
+    print("按鈕已點擊")
+
+    time.sleep(3)
+
+    soup = BeautifulSoup(driver.page_source, "lxml")
     tbody = soup.find("tbody")
     if tbody:
         row = tbody.find("tr")
         columns = row.find_all("td")
-        if len(columns) >= 2:
-            date = columns[0].text.strip()
-            pcr = columns[-1].text.strip()
-            print(f"日期: {date}")
-            print(f"選擇權PCR: {pcr}")
-        else:
-            print("找不到足夠的數據列")
-    else:
-        print("找不到 tbody")
+        print(float(columns[-1].text.strip()))
+
+
+except UnexpectedAlertPresentException:
+    try:
+        alert = driver.switch_to.alert
+        print(f"發生警告: {alert.text}")
+        alert.accept()  # 關閉警告
+        print("警告已關閉，重試操作")
+        # 這裡可以選擇重試操作或其他處理方式
+    except NoAlertPresentException:
+        print("警告已經不存在")
 
 except Exception as e:
     print(f"發生錯誤: {e}")
+    traceback.print_exc()
 
 finally:
     # 關閉瀏覽器

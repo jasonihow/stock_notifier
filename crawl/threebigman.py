@@ -1,67 +1,47 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from bs4 import BeautifulSoup
-import sys
+import requests
+import json
 
-# 設置控制台輸出編碼為UTF-8
-sys.stdout.reconfigure(encoding="utf-8")
+# API URL
+url = "https://www.twse.com.tw/rwd/zh/fund/BFI82U?type=day&dayDate=20241024&response=json&_=1729856960636"
 
-# 設定 Selenium 的 Chrome 驅動
-options = webdriver.ChromeOptions()
-options.add_argument("--headless")  # 如果不需要顯示瀏覽器，可以啟用 headless 模式
-options.add_argument("--lang=zh-TW")  # 設置瀏覽器語言為繁體中文
-driver = webdriver.Chrome(options=options)
+# 設定請求標頭
+headers = {
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+    "Connection": "keep-alive",
+    "Referer": "https://www.twse.com.tw/zh/trading/historical/mi-index.html",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+    "X-Requested-With": "XMLHttpRequest",
+}
 
-# 開啟網頁
-driver.get("https://www.twse.com.tw/zh/trading/foreign/bfi82u.html")
+# 發送 GET 請求
+response = requests.get(url, headers=headers)
 
-try:
-    # 使用顯式等待，直到目標 div 加載完成
-    div = WebDriverWait(driver, 30).until(
-        EC.presence_of_element_located((By.ID, "reports"))
-    )
+# 檢查請求是否成功
+if response.status_code == 200:
+    # 解析資料
+    # 嘗試用不同的編碼進行解碼
+    try:
+        # 假設資料是以 big5 編碼
+        data = response.content.decode("UTF-8")
+        # 由於原始資料是以某種結構化方式返回，嘗試將其轉換為字典
 
-    html = div.get_attribute("outerHTML")
-    soup = BeautifulSoup(html, "lxml")
+        json_data = json.loads(data)
+        a = json_data["data"][0][3].replace(",", "")
+        b = json_data["data"][1][3].replace(",", "")
+        self_dealer_sum = f"{round((int(a) + int(b)) / 100000000, 1)}"
+        investment_trust = (
+            f"{round(int(json_data['data'][2][3].replace(',', '')) / 100000000, 1)}"
+        )
+        foreign_investors = (
+            f"{round(int(json_data['data'][3][3].replace(',', '')) / 100000000, 1)}"
+        )
 
-    # 提取日期
-    date_element = soup.find("h2", class_="")
-    date_str = date_element.find("span").text.strip()
-    year, month, day = (
-        date_str.replace("年", "/").replace("月", "/").replace("日", "").split("/")
-    )
-    year = int(year) + 1911  # 轉換民國年為西元年
-    formatted_date = f"{year:04d}/{int(month):02d}/{int(day):02d}"
-    print(f"日期: {formatted_date}")
+        print(self_dealer_sum, investment_trust, foreign_investors)
+        # 顯示解析後的資料
 
-    # 提取數據
-    tbody = soup.find("tbody", class_="is-last-page")
-    if tbody:
-        rows = tbody.find_all("tr")
-        values = []
-        for i, row in enumerate(rows):
-            if i in [0, 1, 2, 3]:  # 只取前四行
-                columns = row.find_all("td")
-                if len(columns) >= 4:
-                    value = columns[3].text.strip().replace(",", "")
-                    values.append(int(value))
-
-        # 計算並輸出結果（單位：億）
-        self_dealer_sum = round((values[0] + values[1]) / 100000000, 2)
-        investment_trust = round(values[2] / 100000000, 2)
-        foreign_investors = round(values[3] / 100000000, 2)
-
-        print(f"自營商買賣超金額: {self_dealer_sum} 億")
-        print(f"投信買賣超金額: {investment_trust} 億")
-        print(f"外資買賣超金額: {foreign_investors} 億")
-    else:
-        print("找不到數據表格")
-
-except Exception as e:
-    print(f"發生錯誤: {e}")
-
-finally:
-    # 關閉瀏覽器
-    driver.quit()
+    except Exception as e:
+        print(f"資料解析失敗: {e}")
+else:
+    print(f"請求失敗，狀態碼: {response.status_code}")
