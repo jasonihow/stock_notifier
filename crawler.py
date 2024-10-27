@@ -485,7 +485,8 @@ def create_table_image(file_path):
 
     # 設置中文字體
     plt.rcParams["font.sans-serif"] = [
-        "Noto Sans CJK TC",  # 優先使用 Noto Sans CJK
+        "Noto Sans CJK TC",# 優先使用 Noto Sans CJK
+        "sans-serif", 
         "WenQuanYi Micro Hei",  # 或者使用 WenQuanYi Micro Hei
         "Microsoft YaHei",  # 或者使用 Microsoft YaHei
         "SimHei",  # 或者使用 SimHei
