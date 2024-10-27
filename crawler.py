@@ -114,7 +114,7 @@ def get_three_big_man(target_date):
         try:
             # 假設資料是以 big5 編碼
             data = response.content.decode("UTF-8")
-            # 由於原始資料是以某種結構化方式返回，嘗試將其轉換為字典
+            # 由於原始資料是以某種結構化方式返回，嘗試將其轉換為典
 
             json_data = json.loads(data)
             a = json_data["data"][0][3].replace(",", "")
@@ -263,7 +263,7 @@ def get_top510(driver, target_date):
     columns = row.select("td")
 
     def extract_number(text):
-        # 使用正則表達式提取數字，包括負數
+        # 使用正則表達式提取數，包括負數
         match = re.search(r"-?\d+", text.replace(",", ""))
         return int(match.group()) if match else 0
 
@@ -485,8 +485,11 @@ def create_table_image(file_path):
 
     # 設置中文字體
     plt.rcParams["font.sans-serif"] = [
-        "Noto Sans CJK TC",# 優先使用 Noto Sans CJK
-        "sans-serif", 
+        "Noto Sans CJK TC",
+        "Noto Sans CJK JP",
+        "Noto Sans CJK KR",
+        "Noto Sans CJK SC",
+        "sans-serif",
         "WenQuanYi Micro Hei",  # 或者使用 WenQuanYi Micro Hei
         "Microsoft YaHei",  # 或者使用 Microsoft YaHei
         "SimHei",  # 或者使用 SimHei
