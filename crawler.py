@@ -454,6 +454,7 @@ def check_and_write_data(date, data):
                     "外資選擇權",
                     "選擇權PCR",
                     "韭菜指數",
+                    "韭菜指數",
                 ]
             )
             writer.writerow(data)
@@ -607,6 +608,7 @@ def main(target_date=None):
             foreign_investors,
             investment_trust,
             self_dealer,
+            future_empty,  # 外資期貨未平倉
             future_empty,  # 外資期貨未平倉
             top5,
             top10,
