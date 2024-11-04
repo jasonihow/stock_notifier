@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.12'  # 使用Python 3.12
     
     - name: Install dependencies
       run: |
@@ -31,27 +31,18 @@ jobs:
     
     - name: Install ChromeDriver
       run: |
-        # 指定ChromeDriver的下载链接
         CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/130.0.6723.58/linux64/chromedriver-linux64.zip"
         echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL"
-        
-        # 下载并安装ChromeDriver
         curl -L -o chromedriver.zip "$CHROMEDRIVER_URL"
-    
-        # 检查下载是否成功
+        
         if [ $? -ne 0 ]; then
           echo "Failed to download ChromeDriver"
           exit 1
         fi
-    
-        # 解压缩ChromeDriver
+        
         unzip chromedriver.zip
-    
-        # 移动到正确的路径并设置权限
         chmod +x chromedriver-linux64/chromedriver
         sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
-    
-        # 清理下载的zip文件和解压后的目录
         rm -r chromedriver.zip chromedriver-linux64
     
     - name: Install fonts
