@@ -114,7 +114,7 @@ def get_three_big_man(target_date):
         try:
             # 假設資料是以 big5 編碼
             data = response.content.decode("UTF-8")
-            # 由於原始資料是以某種結構化方式返回，嘗試將其轉換為典
+            # 由於原始資料是以某種結構化方式返回，嘗試將其轉換為字典
 
             json_data = json.loads(data)
             a = json_data["data"][0][3].replace(",", "")
@@ -263,7 +263,7 @@ def get_top510(driver, target_date):
     columns = row.select("td")
 
     def extract_number(text):
-        # 使用正則表達式提取數，包括負數
+        # 使用正則表達式提取數字，包括負數
         match = re.search(r"-?\d+", text.replace(",", ""))
         return int(match.group()) if match else 0
 
@@ -490,6 +490,7 @@ def create_table_image(file_path):
         "Noto Sans CJK KR",
         "Noto Sans CJK SC",
         "sans-serif",
+        # 優先使用 Noto Sans CJK
         "WenQuanYi Micro Hei",  # 或者使用 WenQuanYi Micro Hei
         "Microsoft YaHei",  # 或者使用 Microsoft YaHei
         "SimHei",  # 或者使用 SimHei
@@ -586,18 +587,29 @@ def format_data_message(data):
 def main(target_date=None):
     driver = setup_driver()
     try:
+        print(target_date)
         volume = get_volume(target_date)
+        # print(f"成交量: {volume}億")
 
         foreign_investors, investment_trust, self_dealer = get_three_big_man(
             target_date
         )
+
+        # print(f"外資: {foreign_investors}億")
+        # print(f"投信: {investment_trust}億")
+        # print(f"自營商: {self_dealer}億")
         future_empty, small_future_empty = get_future_empty_and_little_furture_empty(
             driver, target_date
         )  # 獲取兩個值
+        # print(f"外資期貨未平倉: {future_empty}億")
         top5, top10 = get_top510(driver, target_date)
+        # print(f"前五大交易人留倉: {top5}")
         choice = get_choice(driver, target_date)
+        # print(f"選擇權: {choice}億")
         pcr = get_pcr(driver, target_date)
+        # print(f"PCR: {pcr}")
         little_tai = get_little_tai(driver, target_date)
+        # print(f"韭菜指數: {little_tai}億")
 
         # 計算韭菜指數
         chive_index = (
