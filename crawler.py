@@ -589,27 +589,27 @@ def main(target_date=None):
     try:
         print(target_date)
         volume = get_volume(target_date)
-        # print(f"成交量: {volume}億")
+        print(f"成交量: {volume}億")
 
         foreign_investors, investment_trust, self_dealer = get_three_big_man(
             target_date
         )
 
-        # print(f"外資: {foreign_investors}億")
-        # print(f"投信: {investment_trust}億")
-        # print(f"自營商: {self_dealer}億")
+        print(f"外資: {foreign_investors}億")
+        print(f"投信: {investment_trust}億")
+        print(f"自營商: {self_dealer}億")
         future_empty, small_future_empty = get_future_empty_and_little_furture_empty(
             driver, target_date
         )  # 獲取兩個值
-        # print(f"外資期貨未平倉: {future_empty}億")
+        print(f"外資期貨未平倉: {future_empty}億")
         top5, top10 = get_top510(driver, target_date)
-        # print(f"前五大交易人留倉: {top5}")
+        print(f"前五大交易人留倉: {top5}")
         choice = get_choice(driver, target_date)
-        # print(f"選擇權: {choice}億")
+        print(f"選擇權: {choice}億")
         pcr = get_pcr(driver, target_date)
-        # print(f"PCR: {pcr}")
+        print(f"PCR: {pcr}")
         little_tai = get_little_tai(driver, target_date)
-        # print(f"韭菜指數: {little_tai}億")
+        print(f"韭菜指數: {little_tai}億")
 
         # 計算韭菜指數
         chive_index = (
