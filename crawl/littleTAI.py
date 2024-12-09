@@ -44,7 +44,7 @@ try:
         EC.visibility_of_element_located((By.ID, "queryDate"))
     )
     input_element.clear()
-    input_element.send_keys("2024/10/24")
+    input_element.send_keys("2024/12/09")
 
     # 等待選擇時段的下拉選單可見
     market_code_select = WebDriverWait(driver, 10).until(
@@ -92,7 +92,7 @@ try:
 
     # 提取數據
     target_td = soup.find(
-        "td", {"align": "right", "bgcolor": "#ecf2f9", "class": "12bk"}
+        "td", {"align": "right", "style": "background-color:#ecf2f9", "class": "12bk"}
     )
     if target_td:
         value = target_td.text.strip()
