@@ -2,7 +2,7 @@ import requests
 import json
 
 # API URL
-url = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20241025&type=MS&response=json&_=1729853427943"
+url = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20241101&type=MS&response=json&_=1729853427943"
 
 # 設定請求標頭
 headers = {

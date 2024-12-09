@@ -202,63 +202,21 @@ def get_future_empty_and_little_furture_empty(driver, target_date):
 
 
 def get_top510(driver, target_date):
-    driver.get("https://www.taifex.com.tw/cht/3/largeTraderFutQry")
+    driver.get("https://www.taifex.com.tw/cht/3/largeTraderFutQryTbl")
 
-    # 使用顯式等待，直到側邊欄加載完成
-    WebDriverWait(driver, 60).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_right"))
+    # 使用顯式等待，直到目標元素加載完成
+    WebDriverWait(driver, 30).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".sidebar_middle"))
     )
 
-    # 等待日期輸入框可用
-    input_element = WebDriverWait(driver, 60).until(
-        EC.visibility_of_element_located((By.ID, "queryDate"))
-    )
-    input_element.clear()
-    input_element.send_keys(target_date)
-
-    # 等待下拉選單元素可見
-    select_element = WebDriverWait(driver, 60).until(
-        EC.visibility_of_element_located((By.ID, "contractId"))
-    )
-
-    # 使用 JavaScript 來選擇選項
-    driver.execute_script(
-        """
-        var select = arguments[0];
-        for(var i = 0; i < select.options.length; i++) {
-            if(select.options[i].text.includes('TX')) {
-                select.selectedIndex = i;
-                var event = new Event('change');
-                select.dispatchEvent(event);
-                break;
-            }
-        }
-    """,
-        select_element,
-    )
-
-    # 增加等待時間以確保選擇生效
-    time.sleep(5)
-
-    # 找到並點擊 "送出查詢" 按鈕
-    submit_button = WebDriverWait(driver, 60).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, "input.btn_orange#submitButton"))
-    )
-
-    # 使用 JavaScript 點擊按鈕
-    driver.execute_script("arguments[0].scrollIntoView(true);", submit_button)
-    driver.execute_script("arguments[0].click();", submit_button)
-
-    # 等待頁面加載新數據
-    WebDriverWait(driver, 60).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "tbody"))
-    )
-
-    # 使用 BeautifulSoup 解析頁面
     soup = BeautifulSoup(driver.page_source, "lxml")
 
+    # 提取日期
+    date = soup.select_one(".section td").text.split()[-1]
+    print(f"日期: {date}")
+
     # 提取數據
-    tbody = soup.select("tbody")[0]  # 選擇第二個 tbody
+    tbody = soup.select("tbody")[1]  # 選擇第二個 tbody
     row = tbody.select("tr")[2]  # 選擇第三行
     columns = row.select("td")
 
@@ -269,8 +227,8 @@ def get_top510(driver, target_date):
 
     nums = [extract_number(columns[i].text) for i in [1, 3, 5, 7]]
 
-    top5 = f"{nums[0] - nums[2]}"
-    top10 = f"{nums[1] - nums[3]}"
+    top5 = nums[0] - nums[2]
+    top10 = nums[1] - nums[3]
 
     return top5, top10
 
@@ -485,7 +443,12 @@ def create_table_image(file_path):
 
     # 設置中文字體
     plt.rcParams["font.sans-serif"] = [
-        "Noto Sans CJK TC",  # 優先使用 Noto Sans CJK
+        "Noto Sans CJK TC",
+        "Noto Sans CJK JP",
+        "Noto Sans CJK KR",
+        "Noto Sans CJK SC",
+        "sans-serif",
+        # 優先使用 Noto Sans CJK
         "WenQuanYi Micro Hei",  # 或者使用 WenQuanYi Micro Hei
         "Microsoft YaHei",  # 或者使用 Microsoft YaHei
         "SimHei",  # 或者使用 SimHei
@@ -582,18 +545,29 @@ def format_data_message(data):
 def main(target_date=None):
     driver = setup_driver()
     try:
+        print(target_date)
         volume = get_volume(target_date)
+        print(f"成交量: {volume}億")
 
         foreign_investors, investment_trust, self_dealer = get_three_big_man(
             target_date
         )
+
+        print(f"外資: {foreign_investors}億")
+        print(f"投信: {investment_trust}億")
+        print(f"自營商: {self_dealer}億")
         future_empty, small_future_empty = get_future_empty_and_little_furture_empty(
             driver, target_date
         )  # 獲取兩個值
+        print(f"外資期貨未平倉: {future_empty}億")
         top5, top10 = get_top510(driver, target_date)
+        print(f"前五大交易人留倉: {top5}")
         choice = get_choice(driver, target_date)
+        print(f"選擇權: {choice}億")
         pcr = get_pcr(driver, target_date)
+        print(f"PCR: {pcr}")
         little_tai = get_little_tai(driver, target_date)
+        print(f"韭菜指數: {little_tai}億")
 
         # 計算韭菜指數
         chive_index = (
