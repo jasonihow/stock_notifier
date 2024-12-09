@@ -382,7 +382,7 @@ def get_little_tai(driver, target_date):
 
     # 提取數據
     target_td = soup.find(
-        "td", {"align": "right", "bgcolor": "#ecf2f9", "class": "12bk"}
+        "td", {"align": "right", "style": "background-color:#ecf2f9", "class": "12bk"}
     )
     if target_td:
         value = target_td.text.strip()
