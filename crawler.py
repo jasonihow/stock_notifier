@@ -381,9 +381,10 @@ def get_little_tai(driver, target_date):
     soup = BeautifulSoup(driver.page_source, "lxml")
 
     # 提取數據
-    target_td = soup.find(
+    target_td = soup.find_all(
         "td", {"align": "right", "style": "background-color:#ecf2f9", "class": "12bk"}
     )
+    target_td = target_td[3]
     if target_td:
         value = target_td.text.strip()
         return value
