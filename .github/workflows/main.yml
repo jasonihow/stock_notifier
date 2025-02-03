@@ -27,6 +27,8 @@ jobs:
     - name: Install Google Chrome
       run: |
         CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chrome-linux64.zip"
+        sudo apt-get update
+        
         echo "Downloading Google Chrome from: $CHROME_URL"
         curl -L -o chrome.zip "$CHROME_URL"
         
@@ -34,11 +36,15 @@ jobs:
           echo "Failed to download Google Chrome"
           exit 1
         fi
-    
+
         unzip chrome.zip
-        sudo mv chrome-linux64 /opt/google/chrome
-        sudo ln -s /opt/google/chrome/google-chrome-stable /usr/local/bin/google-chrome-stable
-        rm -r chrome.zip chrome-linux64
+        chmod +x chrome-linux64/chrome
+        sudo mv chrome-linux64/chrome /usr/local/bin/
+        
+        if [ -d "chrome-linux64" ]; then
+          rm -r chrome-linux64
+        fi
+        rm chrome.zip
         
     
     - name: Install ChromeDriver
