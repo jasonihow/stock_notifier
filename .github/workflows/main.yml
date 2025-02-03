@@ -26,13 +26,24 @@ jobs:
     
     - name: Install Google Chrome
       run: |
-        CHROME_VERSION="132.0.6834.110-1"
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable=${CHROME_VERSION}
+        CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chrome-linux64.zip"
+        echo "Downloading Google Chrome from: $CHROME_URL"
+        curl -L -o chrome.zip "$CHROME_URL"
+        
+        if [ $? -ne 0 ]; then
+          echo "Failed to download Google Chrome"
+          exit 1
+        fi
+    
+        unzip chrome.zip
+        sudo mv chrome-linux64 /opt/google/chrome
+        sudo ln -s /opt/google/chrome/google-chrome-stable /usr/local/bin/google-chrome-stable
+        rm -r chrome.zip chrome-linux64
+        
     
     - name: Install ChromeDriver
       run: |
-        CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/130.0.6723.58/linux64/chromedriver-linux64.zip"
+        CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chromedriver-linux64.zip"
         echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL"
         curl -L -o chromedriver.zip "$CHROMEDRIVER_URL"
         
