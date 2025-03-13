@@ -24,44 +24,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Install Google Chrome
-      run: |
-        CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chrome-linux64.zip"
-        sudo apt-get update
-        
-        echo "Downloading Google Chrome from: $CHROME_URL"
-        curl -L -o chrome.zip "$CHROME_URL"
-        
-        if [ $? -ne 0 ]; then
-          echo "Failed to download Google Chrome"
-          exit 1
-        fi
-
-        unzip chrome.zip
-        chmod +x chrome-linux64/chrome
-        sudo mv chrome-linux64/chrome /usr/local/bin/
-        
-        if [ -d "chrome-linux64" ]; then
-          rm -r chrome-linux64
-        fi
-        rm chrome.zip
-        
-    
-    - name: Install ChromeDriver
-      run: |
-        CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/132.0.6834.159/linux64/chromedriver-linux64.zip"
-        echo "Downloading ChromeDriver from: $CHROMEDRIVER_URL"
-        curl -L -o chromedriver.zip "$CHROMEDRIVER_URL"
-        
-        if [ $? -ne 0 ]; then
-          echo "Failed to download ChromeDriver"
-          exit 1
-        fi
-        
-        unzip chromedriver.zip
-        chmod +x chromedriver-linux64/chromedriver
-        sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
-        rm -r chromedriver.zip chromedriver-linux64
+    - name: Set up Chrome and ChromeDriver
+      uses: browser-actions/setup-chrome@v1
     
     - name: Install fonts
       run: |
