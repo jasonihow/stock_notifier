@@ -71,29 +71,28 @@ def get_volume(target_date):
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        print(f"requests 判斷的編碼: {response.apparent_encoding}")
         try:
-            response.encoding = response.apparent_encoding
+            response.encoding = "utf-8"  # 優先嘗試 UTF-8 解碼
             data = response.text
-            print(f"解碼後的資料 (部分): {data[:500]}")
             json_data = json.loads(data)
             volume = json_data["tables"][6]["data"][16][1].replace(",", "")
             volume = round(int(volume) / 100000000, 1)
             return volume
-        except json.JSONDecodeError as e:
-            print(f"JSON 解析失敗: {e}")
-            print(f"原始回應內容: {response.text[:200]}...")
-        except UnicodeDecodeError as e:
-            print(f"資料解碼失敗: {e} (使用 encoding: {response.apparent_encoding})")
+        except UnicodeDecodeError as e_utf8:
+            print(f"UTF-8 解碼失敗: {e_utf8}")
+            print(f"嘗試使用 big5 解碼...")
             try:
                 data_big5 = response.content.decode("big5")
-                print(f"big5 解碼後的資料 (部分): {data_big5[:500]}")
                 json_data_big5 = json.loads(data_big5)
                 volume = json_data_big5["tables"][6]["data"][16][1].replace(",", "")
                 volume = round(int(volume) / 100000000, 1)
                 return volume
             except (UnicodeDecodeError, json.JSONDecodeError) as e_big5:
                 print(f"嘗試 big5 解碼也失敗: {e_big5}")
+                print(f"原始回應內容 (byte): {response.content[:200]}...")
+        except json.JSONDecodeError as e_json:
+            print(f"JSON 解析失敗: {e_json}")
+            print(f"原始回應內容 (UTF-8 解碼後 - 部分): {response.text[:200]}...")
     else:
         print(f"請求失敗，狀態碼: {response.status_code}")
         return None
