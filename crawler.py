@@ -68,23 +68,26 @@ def get_volume(target_date):
     response = requests.get(url, headers=headers)
 
     # 檢查請求是否成功
+    response = requests.get(url, headers=headers)
+
     if response.status_code == 200:
+        print(f"requests 判斷的編碼: {response.apparent_encoding}")
         try:
-            response.encoding = (
-                response.apparent_encoding
-            )  # 嘗試使用 requests 判斷的編碼
+            response.encoding = response.apparent_encoding
             data = response.text
+            print(f"解碼後的資料 (部分): {data[:500]}")
             json_data = json.loads(data)
             volume = json_data["tables"][6]["data"][16][1].replace(",", "")
             volume = round(int(volume) / 100000000, 1)
             return volume
         except json.JSONDecodeError as e:
             print(f"JSON 解析失敗: {e}")
-            print(f"原始回應內容: {response.text[:200]}...")  # 打印部分原始回應
+            print(f"原始回應內容: {response.text[:200]}...")
         except UnicodeDecodeError as e:
             print(f"資料解碼失敗: {e} (使用 encoding: {response.apparent_encoding})")
             try:
-                data_big5 = response.content.decode("big5")  # 嘗試使用 big5 解碼
+                data_big5 = response.content.decode("big5")
+                print(f"big5 解碼後的資料 (部分): {data_big5[:500]}")
                 json_data_big5 = json.loads(data_big5)
                 volume = json_data_big5["tables"][6]["data"][16][1].replace(",", "")
                 volume = round(int(volume) / 100000000, 1)
