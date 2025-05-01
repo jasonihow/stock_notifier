@@ -1,0 +1,50 @@
+name: Daily Market Data Crawler
+
+on:
+  schedule:
+    - cron: '0 9 * * 1-5'  # 每个工作日（周一到周五）的 UTC 1:00 运行
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  run-crawler:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.PAT }}  # 使用PAT進行checkout
+        fetch-depth: 0  # 獲取所有歷史記錄，以便進行合併
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'  # 使用Python 3.12
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install CJK fonts
+      run: |
+        choco install noto-fonts-cjk  # 使用 Chocolatey 安裝 CJK 字體
+
+    - name: Set up Chrome and ChromeDriver
+      uses: browser-actions/setup-chrome@v1
+
+    - name: Run crawler with Chrome
+      env:
+        LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+      run: python crawler.py
+
+    - name: Commit and push if changed
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git add market_data.csv
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update market data")
+        git pull --rebase  # 拉取並重新應用本地更改
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}  # 使用PAT進行推送
