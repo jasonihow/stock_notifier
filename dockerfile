@@ -1,5 +1,8 @@
 FROM python:3.12-slim
 
+# Install curl before running the script
+RUN apt-get update && apt-get install -y curl
+
 # 安裝 Chrome 及中文字體
 RUN apt-get update && \
     apt-get install -y wget unzip fonts-noto-cjk && \
