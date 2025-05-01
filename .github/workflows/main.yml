@@ -26,7 +26,7 @@ jobs:
 
     - name: Install CJK fonts
       run: |
-        choco install noto-fonts-cjk  # 使用 Chocolatey 安裝 CJK 字體
+        winget install --id Google.NotoCJK
 
     - name: Set up Chrome and ChromeDriver
       uses: browser-actions/setup-chrome@v1
