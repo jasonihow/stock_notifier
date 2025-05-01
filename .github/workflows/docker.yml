@@ -1,0 +1,40 @@
+name: Daily Market Data Crawler (Docker)
+
+on:
+  schedule:
+    - cron: '0 9 * * 1-5'  # 每週一至五，台灣時間 17:00
+  workflow_dispatch:
+
+jobs:
+  run-docker-crawler:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v3
+
+    - name: Build Docker image
+      run: docker build -t market-crawler .
+
+    - name: Run Docker container
+      env:
+        LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+      run: |
+        docker run \
+          -e LINE_CHANNEL_ACCESS_TOKEN \
+          -e LINE_USER_ID \
+          -e IMGUR_CLIENT_ID \
+          market-crawler
+
+    - name: Commit and push updated market_data.csv
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git add market_data.csv
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update market data")
+        git pull --rebase
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
