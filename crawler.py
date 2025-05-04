@@ -68,7 +68,7 @@ def get_volume(target_date):
     response = requests.get(url)
 
     # 檢查請求是否成功
-    response = requests.get(url, headers=headers)
+    response = requests.get(url)
 
     if response.status_code == 200:
         try:
