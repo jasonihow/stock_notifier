@@ -54,18 +54,18 @@ def get_volume(target_date):
     url = f"https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={target_date}&type=MS&response=json&_=1729853427943"
 
     # 設定請求標頭
-    headers = {
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-        "Connection": "keep-alive",
-        "Referer": "https://www.twse.com.tw/zh/trading/historical/mi-index.html",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
-        "X-Requested-With": "XMLHttpRequest",
-    }
+    # headers = {
+    #     "Accept": "application/json, text/javascript, */*; q=0.01",
+    #     "Accept-Encoding": "gzip, deflate, br, zstd",
+    #     "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+    #     "Connection": "keep-alive",
+    #     "Referer": "https://www.twse.com.tw/zh/trading/historical/mi-index.html",
+    #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+    #     "X-Requested-With": "XMLHttpRequest",
+    # }
 
     # 發送 GET 請求
-    response = requests.get(url, headers=headers)
+    response = requests.get(url)
 
     # 檢查請求是否成功
     if response.status_code == 200:
@@ -94,18 +94,18 @@ def get_three_big_man(target_date):
     url = f"https://www.twse.com.tw/rwd/zh/fund/BFI82U?type=day&dayDate={target_date}&response=json&_=1729856960636"
 
     # 設定請求標頭
-    headers = {
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-        "Connection": "keep-alive",
-        "Referer": "https://www.twse.com.tw/zh/trading/historical/mi-index.html",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
-        "X-Requested-With": "XMLHttpRequest",
-    }
+    # headers = {
+    #     "Accept": "application/json, text/javascript, */*; q=0.01",
+    #     "Accept-Encoding": "gzip, deflate, br, zstd",
+    #     "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+    #     "Connection": "keep-alive",
+    #     "Referer": "https://www.twse.com.tw/zh/trading/historical/mi-index.html",
+    #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+    #     "X-Requested-With": "XMLHttpRequest",
+    # }
 
     # 發送 GET 請求
-    response = requests.get(url, headers=headers)
+    response = requests.get(url)
 
     # 檢查請求是否成功
     if response.status_code == 200:
